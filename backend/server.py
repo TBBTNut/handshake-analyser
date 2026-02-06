@@ -16,6 +16,8 @@ import numpy as np
 import io
 import base64
 import struct
+from twilio.rest import Client
+from twilio.twiml.voice_response import VoiceResponse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
