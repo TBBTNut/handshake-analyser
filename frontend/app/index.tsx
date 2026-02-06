@@ -74,10 +74,12 @@ export default function ModemEmulator() {
   const [useTwilio, setUseTwilio] = useState<boolean>(false);
   const [twilioEnabled, setTwilioEnabled] = useState<boolean>(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<ThemeName>('terminal');
 
   useEffect(() => {
     loadInitialData();
     setupAudio();
+    loadTheme();
     
     return () => {
       if (sound) {
@@ -85,6 +87,32 @@ export default function ModemEmulator() {
       }
     };
   }, []);
+
+  const loadTheme = async () => {
+    try {
+      const savedTheme = await AsyncStorage.getItem('app_theme');
+      if (savedTheme === 'terminal' || savedTheme === 'windows95' || savedTheme === 'windowsXP' || savedTheme === 'macOS9') {
+        setTheme(savedTheme as ThemeName);
+      }
+    } catch (error) {
+      console.error('Error loading theme:', error);
+    }
+  };
+
+  const cycleTheme = async () => {
+    const themes: ThemeName[] = ['terminal', 'windows95', 'windowsXP', 'macOS9'];
+    const currentIndex = themes.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const newTheme = themes[nextIndex];
+    
+    try {
+      await AsyncStorage.setItem('app_theme', newTheme);
+      setTheme(newTheme);
+      Alert.alert('Theme Changed', `Now using ${newTheme === 'terminal' ? 'Terminal' : newTheme === 'windows95' ? 'Windows 95' : newTheme === 'windowsXP' ? 'Windows XP' : 'Mac OS 9'} theme`);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
+  };
 
   const setupAudio = async () => {
     try {
