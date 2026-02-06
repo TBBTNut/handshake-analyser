@@ -170,6 +170,7 @@ export default function ModemEmulator() {
         protocol: selectedProtocol,
         phone_number: phoneNumber,
         isp_name: selectedISP?.name,
+        use_twilio: useTwilio && twilioEnabled,
       });
 
       setHandshakeStages(response.data.stages);
