@@ -525,6 +525,33 @@ async def dial_modem(request: DialRequest):
     }
     await db.modem_sessions.insert_one(session_data)
     
+    # Create connection history entry
+    history_entry = ConnectionHistoryEntry(
+        session_id=session_id,
+        protocol=request.protocol,
+        phone_number=request.phone_number,
+        isp_name=request.isp_name,
+        mode=mode,
+        status="in_progress",
+        started_at=datetime.utcnow(),
+        total_stages=len(handshake_stages),
+        stages_completed=0,
+        twilio_call_sid=twilio_call_sid,
+        handshake_data={
+            "stages": [
+                {
+                    "stage": s.stage,
+                    "name": s.name,
+                    "description": s.description,
+                    "frequency": s.frequency,
+                    "duration": s.duration
+                }
+                for s in handshake_stages
+            ]
+        }
+    )
+    await db.connection_history.insert_one(history_entry.dict())
+    
     return DialResponse(
         session_id=session_id,
         protocol=request.protocol,
@@ -535,6 +562,50 @@ async def dial_modem(request: DialRequest):
         mode=mode,
         twilio_call_sid=twilio_call_sid
     )
+
+@api_router.post("/connection/{session_id}/complete")
+async def complete_connection(session_id: str, stages_completed: int, status: str = "success"):
+    """Mark a connection as completed"""
+    try:
+        completed_at = datetime.utcnow()
+        
+        # Get the history entry to calculate duration
+        history = await db.connection_history.find_one({"session_id": session_id})
+        if history:
+            started_at = history["started_at"]
+            duration = (completed_at - started_at).total_seconds()
+            
+            await db.connection_history.update_one(
+                {"session_id": session_id},
+                {"$set": {
+                    "completed_at": completed_at,
+                    "duration": duration,
+                    "stages_completed": stages_completed,
+                    "status": status
+                }}
+            )
+            
+            return {"success": True, "duration": duration}
+        
+        return {"success": False, "message": "Session not found"}
+    except Exception as e:
+        logger.error(f"Error completing connection: {str(e)}")
+        return {"success": False, "message": str(e)}
+
+@api_router.post("/recording-status/{session_id}")
+async def handle_recording_status(session_id: str):
+    """Handle Twilio recording status callbacks"""
+    try:
+        # When recording is complete, Twilio sends the recording URL
+        # We'll save it to the connection history
+        logger.info(f"Received recording status callback for session {session_id}")
+        
+        # The recording URL will be in the request body from Twilio
+        # For now, just acknowledge receipt
+        return {"status": "received"}
+    except Exception as e:
+        logger.error(f"Error handling recording status: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @api_router.post("/call-status/{session_id}")
 async def handle_call_status(session_id: str):
