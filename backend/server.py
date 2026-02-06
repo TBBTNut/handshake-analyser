@@ -451,6 +451,74 @@ async def dial_modem(request: DialRequest):
     
     # Create session
     session_id = str(uuid.uuid4())
+    mode = "simulator"
+    twilio_call_sid = None
+    
+    # Check if Twilio is enabled and should be used
+    if request.use_twilio:
+        twilio_settings = await db.twilio_settings.find_one({"enabled": True})
+        
+        if twilio_settings:
+            try:
+                # Initialize Twilio client
+                twilio_client = Client(
+                    twilio_settings["account_sid"],
+                    twilio_settings["auth_token"]
+                )
+                
+                # Create TwiML for the call
+                twiml_response = VoiceResponse()
+                twiml_response.say("Initiating modem handshake sequence.", voice='alice')
+                twiml_response.pause(length=1)
+                
+                # Normalize phone number
+                normalized_number = request.phone_number
+                if not normalized_number.startswith('+'):
+                    normalized_number = '+1' + normalized_number.replace('-', '').replace(' ', '').replace('(', '').replace(')', '')
+                
+                # Make the call
+                call = twilio_client.calls.create(
+                    from_=twilio_settings["phone_number"],
+                    to=normalized_number,
+                    twiml=str(twiml_response),
+                    status_callback=f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/call-status/{session_id}",
+                    status_callback_event=['initiated', 'ringing', 'answered', 'completed']
+                )
+                
+                twilio_call_sid = call.sid
+                mode = "real_call"
+                logger.info(f"Twilio call initiated: {call.sid} to {normalized_number}")
+                
+            except Exception as e:
+                logger.error(f"Error initiating Twilio call: {str(e)}")
+                # Fall back to simulator mode
+                mode = "simulator"
+    
+    session_data = {
+        "session_id": session_id,
+        "protocol": request.protocol,
+        "phone_number": request.phone_number,
+        "isp_name": request.isp_name,
+        "started_at": datetime.utcnow(),
+        "status": "initiated",
+        "mode": mode,
+        "twilio_call_sid": twilio_call_sid
+    }
+    await db.modem_sessions.insert_one(session_data)
+    
+    return DialResponse(
+        session_id=session_id,
+        protocol=request.protocol,
+        phone_number=request.phone_number,
+        stages=handshake_stages,
+        dial_tone_base64=dial_tone_base64,
+        estimated_duration=total_duration,
+        mode=mode,
+        twilio_call_sid=twilio_call_sid
+    )
+    
+    # Create session
+    session_id = str(uuid.uuid4())
     session_data = {
         "session_id": session_id,
         "protocol": request.protocol,
