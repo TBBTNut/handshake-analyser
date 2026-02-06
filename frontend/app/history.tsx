@@ -624,6 +624,16 @@ export default function History() {
           <Text style={styles.title}>HISTORY</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity
+              onPress={() => saveTheme(theme === 'terminal' ? 'windows95' : 'terminal')}
+              style={styles.themeButton}
+            >
+              <Ionicons 
+                name={theme === 'windows95' ? 'desktop' : 'terminal'} 
+                size={24} 
+                color="#00ff00" 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={downloadAllRecordings}
               style={styles.downloadAllButton}
             >
