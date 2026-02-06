@@ -1674,6 +1674,9 @@ const styles = StyleSheet.create({
   cancelButton: {
     padding: 4,
   },
+  retryButton: {
+    padding: 4,
+  },
   progressContainer: {
     marginTop: 12,
     flexDirection: 'row',
