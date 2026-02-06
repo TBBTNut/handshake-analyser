@@ -344,28 +344,30 @@ export default function ModemEmulator() {
         </View>
 
         {/* Connection Status */}
-        <View style={styles.statusBar}>
-          <View style={[styles.statusIndicator, { backgroundColor: isDialing ? '#00ff00' : '#666' }]} />
-          <Text style={styles.statusText}>{connectionStatus}</Text>
+        <View style={[styles.statusBar, themedStyles.surface, themedStyles.border]}>
+          <View style={[styles.statusIndicator, { backgroundColor: isDialing ? currentTheme.primary : currentTheme.textMuted }]} />
+          <Text style={[styles.statusText, themedStyles.text]}>{connectionStatus}</Text>
         </View>
 
         {/* Protocol Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SELECT PROTOCOL</Text>
+          <Text style={[styles.sectionTitle, themedStyles.text]}>SELECT PROTOCOL</Text>
           <View style={styles.protocolGrid}>
             {protocols.map((protocol) => (
               <TouchableOpacity
                 key={protocol.name}
                 style={[
                   styles.protocolCard,
-                  selectedProtocol === protocol.name && styles.protocolCardSelected,
+                  themedStyles.surface,
+                  themedStyles.border,
+                  selectedProtocol === protocol.name && { backgroundColor: currentTheme.surfaceLight, borderColor: currentTheme.primary, borderWidth: 2 },
                 ]}
                 onPress={() => setSelectedProtocol(protocol.name)}
                 disabled={isDialing}
               >
-                <Text style={styles.protocolName}>{protocol.name}</Text>
-                <Text style={styles.protocolSpeed}>{protocol.speed}</Text>
-                <Text style={styles.protocolDesc}>{protocol.description}</Text>
+                <Text style={[styles.protocolName, themedStyles.text]}>{protocol.name}</Text>
+                <Text style={[styles.protocolSpeed, themedStyles.primary]}>{protocol.speed}</Text>
+                <Text style={[styles.protocolDesc, { color: currentTheme.textMuted }]}>{protocol.description}</Text>
               </TouchableOpacity>
             ))}
           </View>
