@@ -554,7 +554,7 @@ export default function ModemEmulator() {
                     }
                   }}
                 >
-                  <Text style={styles.submitButtonText}>SET NUMBER</Text>
+                  <Text style={[styles.submitButtonText, { color: currentTheme.background }]}>SET NUMBER</Text>
                 </TouchableOpacity>
               </View>
             </View>
