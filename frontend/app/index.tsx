@@ -233,9 +233,19 @@ export default function ModemEmulator() {
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Ionicons name="hardware-chip" size={32} color="#00ff00" />
-          <Text style={styles.title}>MODEM EMULATOR</Text>
-          <Text style={styles.subtitle}>Protocol Analyzer & Dialer</Text>
+          <View style={styles.headerLeft}>
+            <Ionicons name="hardware-chip" size={32} color="#00ff00" />
+            <View>
+              <Text style={styles.title}>MODEM EMULATOR</Text>
+              <Text style={styles.subtitle}>Protocol Analyzer & Dialer</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/settings')}
+          >
+            <Ionicons name="settings" size={28} color="#00ff00" />
+          </TouchableOpacity>
         </View>
 
         {/* Connection Status */}
