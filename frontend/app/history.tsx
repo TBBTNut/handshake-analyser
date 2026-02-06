@@ -1124,6 +1124,7 @@ export default function History() {
                           </Text>
                           <Text style={styles.queueItemStatus}>
                             {item.status.toUpperCase()}
+                            {item.retryCount ? ` (Retry ${item.retryCount})` : ''}
                           </Text>
                         </View>
                         {(item.status === 'downloading' || item.status === 'queued') && (
@@ -1132,6 +1133,14 @@ export default function History() {
                             onPress={() => cancelDownload(item.sessionId)}
                           >
                             <Ionicons name="close-circle" size={24} color="#ff0000" />
+                          </TouchableOpacity>
+                        )}
+                        {item.status === 'failed' && (
+                          <TouchableOpacity
+                            style={styles.retryButton}
+                            onPress={() => retryDownload(item.sessionId)}
+                          >
+                            <Ionicons name="refresh-circle" size={24} color="#ffff00" />
                           </TouchableOpacity>
                         )}
                       </View>
