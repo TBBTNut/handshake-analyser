@@ -50,6 +50,8 @@ interface DialResponse {
   stages: HandshakeStage[];
   dial_tone_base64: string;
   estimated_duration: number;
+  mode: string;
+  twilio_call_sid?: string;
 }
 
 export default function ModemEmulator() {
@@ -69,6 +71,7 @@ export default function ModemEmulator() {
   const [connectionStatus, setConnectionStatus] = useState<string>('Ready');
   const [useTwilio, setUseTwilio] = useState<boolean>(false);
   const [twilioEnabled, setTwilioEnabled] = useState<boolean>(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     loadInitialData();
