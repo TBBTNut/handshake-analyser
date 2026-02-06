@@ -49,6 +49,20 @@ export default function History() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ConnectionHistory | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
+  // Filter states
+  const [searchText, setSearchText] = useState('');
+  const [filterProtocol, setFilterProtocol] = useState<string>('');
+  const [filterMode, setFilterMode] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  
+  // Audio playback states
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const [loadingAudio, setLoadingAudio] = useState(false);
 
   useEffect(() => {
     loadHistory();
