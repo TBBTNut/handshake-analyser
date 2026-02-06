@@ -306,15 +306,15 @@ export default function ModemEmulator() {
 
   return (
     <SafeAreaView style={[styles.safeArea, themedStyles.background]}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <StatusBar barStyle={theme === 'terminal' ? 'light-content' : 'dark-content'} backgroundColor={currentTheme.background} />
+      <ScrollView style={[styles.container, themedStyles.background]} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, themedStyles.border]}>
           <View style={styles.headerLeft}>
-            <Ionicons name="hardware-chip" size={32} color="#00ff00" />
+            <Ionicons name="hardware-chip" size={32} color={currentTheme.primary} />
             <View>
-              <Text style={styles.title}>MODEM EMULATOR</Text>
-              <Text style={styles.subtitle}>Protocol Analyzer & Dialer</Text>
+              <Text style={[styles.title, themedStyles.text]}>MODEM EMULATOR</Text>
+              <Text style={[styles.subtitle, themedStyles.textSecondary]}>Protocol Analyzer & Dialer</Text>
             </View>
           </View>
           <View style={styles.headerButtons}>
@@ -325,14 +325,14 @@ export default function ModemEmulator() {
               <Ionicons 
                 name={theme === 'terminal' ? 'terminal' : theme === 'windows95' ? 'desktop-outline' : theme === 'windowsXP' ? 'desktop' : 'logo-apple'} 
                 size={24} 
-                color="#00ff00" 
+                color={currentTheme.primary} 
               />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerButton}
               onPress={() => router.push('/history')}
             >
-              <Ionicons name="time" size={24} color="#00ff00" />
+              <Ionicons name="time" size={24} color={currentTheme.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerButton}
