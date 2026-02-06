@@ -634,13 +634,50 @@ async def get_session(session_id: str):
     return session
 
 @api_router.get("/history")
-async def get_connection_history(limit: int = 50, skip: int = 0):
-    """Get connection history with pagination"""
+async def get_connection_history(
+    limit: int = 50, 
+    skip: int = 0,
+    protocol: Optional[str] = None,
+    mode: Optional[str] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get connection history with pagination and filtering"""
     try:
-        total = await db.connection_history.count_documents({})
+        # Build filter query
+        filter_query = {}
+        
+        if protocol:
+            filter_query["protocol"] = protocol
+        
+        if mode:
+            filter_query["mode"] = mode
+        
+        if status:
+            filter_query["status"] = status
+        
+        if search:
+            # Search in phone_number or isp_name
+            filter_query["$or"] = [
+                {"phone_number": {"$regex": search, "$options": "i"}},
+                {"isp_name": {"$regex": search, "$options": "i"}}
+            ]
+        
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                date_filter["$gte"] = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            if end_date:
+                date_filter["$lte"] = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            if date_filter:
+                filter_query["started_at"] = date_filter
+        
+        total = await db.connection_history.count_documents(filter_query)
         
         # Get history entries sorted by most recent first
-        history_cursor = db.connection_history.find({}).sort("started_at", -1).skip(skip).limit(limit)
+        history_cursor = db.connection_history.find(filter_query).sort("started_at", -1).skip(skip).limit(limit)
         history_entries = await history_cursor.to_list(length=limit)
         
         # Clean up MongoDB ObjectId and datetime fields
@@ -656,7 +693,15 @@ async def get_connection_history(limit: int = 50, skip: int = 0):
             "total": total,
             "limit": limit,
             "skip": skip,
-            "entries": history_entries
+            "entries": history_entries,
+            "filters": {
+                "protocol": protocol,
+                "mode": mode,
+                "status": status,
+                "search": search,
+                "start_date": start_date,
+                "end_date": end_date
+            }
         }
     except Exception as e:
         logger.error(f"Error getting connection history: {str(e)}")
