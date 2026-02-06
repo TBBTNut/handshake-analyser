@@ -240,12 +240,20 @@ export default function ModemEmulator() {
               <Text style={styles.subtitle}>Protocol Analyzer & Dialer</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => router.push('/settings')}
-          >
-            <Ionicons name="settings" size={28} color="#00ff00" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => router.push('/history')}
+            >
+              <Ionicons name="time" size={24} color="#00ff00" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => router.push('/settings')}
+            >
+              <Ionicons name="settings" size={24} color="#00ff00" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Connection Status */}
