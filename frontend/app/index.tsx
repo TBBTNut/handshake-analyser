@@ -776,4 +776,50 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
+  toggleContainer: {
+    backgroundColor: '#111',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00ff00',
+    marginTop: 12,
+  },
+  toggleInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  toggleLabel: {
+    color: '#00ff00',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  toggleHint: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  toggleButton: {
+    backgroundColor: '#333',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+    alignItems: 'center',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#00ff00',
+    borderColor: '#00ff00',
+  },
+  toggleButtonText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  toggleButtonTextActive: {
+    color: '#000',
+  },
 });
