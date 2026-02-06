@@ -483,7 +483,7 @@ async def dial_modem(request: DialRequest):
                     twilio_settings["auth_token"]
                 )
                 
-                # Create TwiML for the call
+                # Create TwiML for the call with recording
                 twiml_response = VoiceResponse()
                 twiml_response.say("Initiating modem handshake sequence.", voice='alice')
                 twiml_response.pause(length=1)
@@ -493,11 +493,13 @@ async def dial_modem(request: DialRequest):
                 if not normalized_number.startswith('+'):
                     normalized_number = '+1' + normalized_number.replace('-', '').replace(' ', '').replace('(', '').replace(')', '')
                 
-                # Make the call
+                # Make the call with recording enabled
                 call = twilio_client.calls.create(
                     from_=twilio_settings["phone_number"],
                     to=normalized_number,
                     twiml=str(twiml_response),
+                    record=True,  # Enable call recording
+                    recording_status_callback=f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/recording-status/{session_id}",
                     status_callback=f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/call-status/{session_id}",
                     status_callback_event=['initiated', 'ringing', 'answered', 'completed']
                 )
