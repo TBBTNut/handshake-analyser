@@ -301,6 +301,29 @@ export default function ModemEmulator() {
               {customNumber ? `Custom: ${customNumber}` : 'Enter Custom Number'}
             </Text>
           </TouchableOpacity>
+
+          {twilioEnabled && (
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleInfo}>
+                <Ionicons name="call" size={20} color="#00ff00" />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.toggleLabel}>Real Phone Call Mode</Text>
+                  <Text style={styles.toggleHint}>
+                    {useTwilio ? 'Using Twilio (actual call)' : 'Using simulator (audio only)'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.toggleButton, useTwilio && styles.toggleButtonActive]}
+                onPress={() => setUseTwilio(!useTwilio)}
+                disabled={isDialing}
+              >
+                <Text style={[styles.toggleButtonText, useTwilio && styles.toggleButtonTextActive]}>
+                  {useTwilio ? 'ON' : 'OFF'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Handshake Analysis */}
