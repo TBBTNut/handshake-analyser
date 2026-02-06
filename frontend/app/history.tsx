@@ -63,6 +63,10 @@ export default function History() {
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const [loadingAudio, setLoadingAudio] = useState(false);
+  
+  // Download states
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     loadHistory();
