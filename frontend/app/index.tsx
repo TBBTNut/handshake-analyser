@@ -177,6 +177,7 @@ export default function ModemEmulator() {
       });
 
       setHandshakeStages(response.data.stages);
+      setCurrentSessionId(response.data.session_id);
 
       // Play dial tone
       setConnectionStatus(`Dialing ${phoneNumber}...`);
@@ -197,6 +198,18 @@ export default function ModemEmulator() {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
+      // Mark connection as complete
+      await axios.post(
+        `${BACKEND_URL}/api/connection/${response.data.session_id}/complete`,
+        null,
+        {
+          params: {
+            stages_completed: response.data.stages.length,
+            status: 'success',
+          },
+        }
+      );
+
       setConnectionStatus('Connected!');
       Alert.alert('Success', `Connected using ${selectedProtocol}!`);
       
@@ -204,6 +217,24 @@ export default function ModemEmulator() {
       console.error('Error dialing:', error);
       Alert.alert('Error', 'Failed to establish connection');
       setConnectionStatus('Connection failed');
+      
+      // Mark as failed if we have a session
+      if (currentSessionId) {
+        try {
+          await axios.post(
+            `${BACKEND_URL}/api/connection/${currentSessionId}/complete`,
+            null,
+            {
+              params: {
+                stages_completed: currentStage,
+                status: 'failed',
+              },
+            }
+          );
+        } catch (e) {
+          console.error('Error marking connection as failed:', e);
+        }
+      }
     } finally {
       setIsDialing(false);
     }
