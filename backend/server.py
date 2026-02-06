@@ -297,6 +297,127 @@ async def create_isp_number(isp: ISPNumberCreate):
     await db.isp_numbers.insert_one(isp_obj.dict())
     return isp_obj
 
+# Twilio Settings Endpoints
+@api_router.get("/twilio/settings")
+async def get_twilio_settings():
+    """Get Twilio settings (with masked auth token)"""
+    settings = await db.twilio_settings.find_one({})
+    if not settings:
+        return {
+            "configured": False,
+            "enabled": False
+        }
+    
+    # Remove MongoDB _id
+    if "_id" in settings:
+        del settings["_id"]
+    
+    # Mask auth token
+    auth_token = settings.get("auth_token", "")
+    masked_token = auth_token[:4] + ("*" * (len(auth_token) - 8)) + auth_token[-4:] if len(auth_token) > 8 else "****"
+    
+    return {
+        "configured": True,
+        "id": settings.get("id"),
+        "account_sid": settings.get("account_sid"),
+        "phone_number": settings.get("phone_number"),
+        "enabled": settings.get("enabled", False),
+        "auth_token_masked": masked_token,
+        "created_at": settings.get("created_at"),
+        "updated_at": settings.get("updated_at")
+    }
+
+@api_router.post("/twilio/settings")
+async def save_twilio_settings(settings: TwilioSettingsCreate):
+    """Save or update Twilio settings"""
+    try:
+        # Test the credentials
+        try:
+            test_client = Client(settings.account_sid, settings.auth_token)
+            # Try to fetch account info to validate credentials
+            account = test_client.api.accounts(settings.account_sid).fetch()
+            logger.info(f"Twilio credentials validated for account: {account.friendly_name}")
+        except Exception as e:
+            logger.error(f"Invalid Twilio credentials: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Invalid Twilio credentials: {str(e)}")
+        
+        # Check if settings already exist
+        existing = await db.twilio_settings.find_one({})
+        
+        if existing:
+            # Update existing settings
+            await db.twilio_settings.update_one(
+                {"id": existing["id"]},
+                {"$set": {
+                    "account_sid": settings.account_sid,
+                    "auth_token": settings.auth_token,
+                    "phone_number": settings.phone_number,
+                    "enabled": settings.enabled,
+                    "updated_at": datetime.utcnow()
+                }}
+            )
+            settings_id = existing["id"]
+        else:
+            # Create new settings
+            settings_obj = TwilioSettings(**settings.dict())
+            await db.twilio_settings.insert_one(settings_obj.dict())
+            settings_id = settings_obj.id
+        
+        # Fetch and return the saved settings
+        saved_settings = await db.twilio_settings.find_one({"id": settings_id})
+        if "_id" in saved_settings:
+            del saved_settings["_id"]
+        
+        # Mask auth token
+        auth_token = saved_settings.get("auth_token", "")
+        masked_token = auth_token[:4] + ("*" * (len(auth_token) - 8)) + auth_token[-4:] if len(auth_token) > 8 else "****"
+        
+        return {
+            "success": True,
+            "message": "Twilio settings saved successfully",
+            "settings": {
+                "id": saved_settings.get("id"),
+                "account_sid": saved_settings.get("account_sid"),
+                "phone_number": saved_settings.get("phone_number"),
+                "enabled": saved_settings.get("enabled"),
+                "auth_token_masked": masked_token,
+                "created_at": saved_settings.get("created_at"),
+                "updated_at": saved_settings.get("updated_at")
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving Twilio settings: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/twilio/settings")
+async def delete_twilio_settings():
+    """Delete Twilio settings"""
+    result = await db.twilio_settings.delete_many({})
+    return {
+        "success": True,
+        "message": f"Deleted {result.deleted_count} Twilio settings",
+        "deleted_count": result.deleted_count
+    }
+
+@api_router.patch("/twilio/settings/toggle")
+async def toggle_twilio(enabled: bool):
+    """Enable or disable Twilio integration"""
+    result = await db.twilio_settings.update_one(
+        {},
+        {"$set": {"enabled": enabled, "updated_at": datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Twilio settings not found. Please configure Twilio first.")
+    
+    return {
+        "success": True,
+        "enabled": enabled,
+        "message": f"Twilio integration {'enabled' if enabled else 'disabled'}"
+    }
+
 @api_router.post("/dial", response_model=DialResponse)
 async def dial_modem(request: DialRequest):
     """Initiate a modem dial sequence"""
