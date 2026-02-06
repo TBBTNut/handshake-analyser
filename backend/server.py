@@ -499,8 +499,8 @@ async def dial_modem(request: DialRequest):
                     to=normalized_number,
                     twiml=str(twiml_response),
                     record=True,  # Enable call recording
-                    recording_status_callback=f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/recording-status/{session_id}",
-                    status_callback=f"{os.getenv('BACKEND_URL', 'http://localhost:8001')}/api/call-status/{session_id}",
+                    recording_status_callback=f"{os.environ['BACKEND_URL']}/api/recording-status/{session_id}",
+                    status_callback=f"{os.environ['BACKEND_URL']}/api/call-status/{session_id}",
                     status_callback_event=['initiated', 'ringing', 'answered', 'completed']
                 )
                 
