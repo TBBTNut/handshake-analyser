@@ -73,7 +73,7 @@ class ModemProtocol:
             ])
         
         elif protocol == "V.32bis":
-            base_stages.append({"stage": 8, "name": "Connected", "description": "Connection established", "frequency": 0, "duration": 0.5})
+            base_stages.append({"stage": 9, "name": "Connected", "description": "Connection established", "frequency": 0, "duration": 0.5})
         
         return base_stages
 
