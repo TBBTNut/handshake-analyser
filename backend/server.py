@@ -190,10 +190,35 @@ class ISPNumberCreate(BaseModel):
     phone_number: str
     country: str
 
+class TwilioSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    account_sid: str
+    auth_token: str
+    phone_number: str
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TwilioSettingsCreate(BaseModel):
+    account_sid: str
+    auth_token: str
+    phone_number: str
+    enabled: bool = True
+
+class TwilioSettingsResponse(BaseModel):
+    id: str
+    account_sid: str
+    phone_number: str
+    enabled: bool
+    auth_token_masked: str
+    created_at: datetime
+    updated_at: datetime
+
 class DialRequest(BaseModel):
     protocol: str
     phone_number: str
     isp_name: Optional[str] = None
+    use_twilio: bool = False
 
 class HandshakeStage(BaseModel):
     stage: int
@@ -210,6 +235,8 @@ class DialResponse(BaseModel):
     stages: List[HandshakeStage]
     dial_tone_base64: str
     estimated_duration: float
+    mode: str  # "simulator" or "real_call"
+    twilio_call_sid: Optional[str] = None
 
 # Initialize ISP database with known numbers
 @app.on_event("startup")
