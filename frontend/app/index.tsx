@@ -53,6 +53,7 @@ interface DialResponse {
 }
 
 export default function ModemEmulator() {
+  const router = useRouter();
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [ispNumbers, setIspNumbers] = useState<ISPNumber[]>([]);
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
@@ -66,6 +67,8 @@ export default function ModemEmulator() {
   const [loading, setLoading] = useState<boolean>(true);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<string>('Ready');
+  const [useTwilio, setUseTwilio] = useState<boolean>(false);
+  const [twilioEnabled, setTwilioEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     loadInitialData();
