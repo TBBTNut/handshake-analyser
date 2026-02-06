@@ -633,6 +633,160 @@ async def get_session(session_id: str):
         session["started_at"] = session["started_at"].isoformat()
     return session
 
+@api_router.get("/history")
+async def get_connection_history(limit: int = 50, skip: int = 0):
+    """Get connection history with pagination"""
+    try:
+        total = await db.connection_history.count_documents({})
+        
+        # Get history entries sorted by most recent first
+        history_cursor = db.connection_history.find({}).sort("started_at", -1).skip(skip).limit(limit)
+        history_entries = await history_cursor.to_list(length=limit)
+        
+        # Clean up MongoDB ObjectId and datetime fields
+        for entry in history_entries:
+            if "_id" in entry:
+                del entry["_id"]
+            if "started_at" in entry:
+                entry["started_at"] = entry["started_at"].isoformat()
+            if "completed_at" in entry and entry["completed_at"]:
+                entry["completed_at"] = entry["completed_at"].isoformat()
+        
+        return {
+            "total": total,
+            "limit": limit,
+            "skip": skip,
+            "entries": history_entries
+        }
+    except Exception as e:
+        logger.error(f"Error getting connection history: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/history/{session_id}")
+async def get_history_entry(session_id: str):
+    """Get a specific history entry"""
+    try:
+        entry = await db.connection_history.find_one({"session_id": session_id})
+        if not entry:
+            raise HTTPException(status_code=404, detail="History entry not found")
+        
+        # Clean up
+        if "_id" in entry:
+            del entry["_id"]
+        if "started_at" in entry:
+            entry["started_at"] = entry["started_at"].isoformat()
+        if "completed_at" in entry and entry["completed_at"]:
+            entry["completed_at"] = entry["completed_at"].isoformat()
+        
+        return entry
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting history entry: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/history/{session_id}/export")
+async def export_handshake_data(session_id: str, format: str = "json"):
+    """Export handshake data in JSON or CSV format"""
+    try:
+        entry = await db.connection_history.find_one({"session_id": session_id})
+        if not entry:
+            raise HTTPException(status_code=404, detail="History entry not found")
+        
+        if format == "json":
+            # Clean up MongoDB fields
+            if "_id" in entry:
+                del entry["_id"]
+            if "started_at" in entry:
+                entry["started_at"] = entry["started_at"].isoformat()
+            if "completed_at" in entry and entry["completed_at"]:
+                entry["completed_at"] = entry["completed_at"].isoformat()
+            
+            return entry
+        
+        elif format == "csv":
+            # Create CSV format for handshake stages
+            import csv
+            from io import StringIO
+            
+            output = StringIO()
+            writer = csv.writer(output)
+            
+            # Write header
+            writer.writerow(['Session ID', entry['session_id']])
+            writer.writerow(['Protocol', entry['protocol']])
+            writer.writerow(['Phone Number', entry['phone_number']])
+            writer.writerow(['ISP Name', entry.get('isp_name', 'N/A')])
+            writer.writerow(['Mode', entry['mode']])
+            writer.writerow(['Status', entry['status']])
+            writer.writerow(['Started At', entry['started_at'].isoformat() if isinstance(entry['started_at'], datetime) else entry['started_at']])
+            if entry.get('completed_at'):
+                writer.writerow(['Completed At', entry['completed_at'].isoformat() if isinstance(entry['completed_at'], datetime) else entry['completed_at']])
+            if entry.get('duration'):
+                writer.writerow(['Duration (seconds)', entry['duration']])
+            writer.writerow([])
+            
+            # Write handshake stages
+            writer.writerow(['Stage', 'Name', 'Description', 'Frequency (Hz)', 'Duration (s)'])
+            
+            if entry.get('handshake_data') and entry['handshake_data'].get('stages'):
+                for stage in entry['handshake_data']['stages']:
+                    writer.writerow([
+                        stage['stage'],
+                        stage['name'],
+                        stage['description'],
+                        stage['frequency'],
+                        stage['duration']
+                    ])
+            
+            csv_content = output.getvalue()
+            output.close()
+            
+            return StreamingResponse(
+                iter([csv_content]),
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename=handshake_{session_id}.csv"}
+            )
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid format. Use 'json' or 'csv'")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error exporting handshake data: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/history/{session_id}")
+async def delete_history_entry(session_id: str):
+    """Delete a history entry"""
+    try:
+        result = await db.connection_history.delete_one({"session_id": session_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="History entry not found")
+        
+        return {"success": True, "message": "History entry deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting history entry: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/history")
+async def clear_history():
+    """Clear all connection history"""
+    try:
+        result = await db.connection_history.delete_many({})
+        return {
+            "success": True,
+            "message": f"Deleted {result.deleted_count} history entries",
+            "deleted_count": result.deleted_count
+        }
+    except Exception as e:
+        logger.error(f"Error clearing history: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
