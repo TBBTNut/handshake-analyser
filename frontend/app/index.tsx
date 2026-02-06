@@ -282,17 +282,30 @@ export default function ModemEmulator() {
     setConnectionStatus('Disconnected');
   };
 
+  // Get current theme
+  const currentTheme = getTheme(theme);
+  
+  // Generate dynamic styles based on theme
+  const themedStyles = {
+    background: { backgroundColor: currentTheme.background },
+    surface: { backgroundColor: currentTheme.surface },
+    text: { color: currentTheme.text },
+    textSecondary: { color: currentTheme.textSecondary },
+    border: { borderColor: currentTheme.border },
+    primary: { color: currentTheme.primary },
+  };
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00ff00" />
-        <Text style={styles.loadingText}>Initializing Modem...</Text>
+      <View style={[styles.loadingContainer, themedStyles.background]}>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+        <Text style={[styles.loadingText, themedStyles.text]}>Initializing Modem...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, themedStyles.background]}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
