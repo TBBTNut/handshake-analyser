@@ -576,6 +576,23 @@ export default function History() {
           <Text style={styles.title}>HISTORY</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity
+              onPress={downloadAllRecordings}
+              style={styles.downloadAllButton}
+            >
+              <Ionicons name="cloud-download" size={24} color="#00ff00" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowQueueModal(true)}
+              style={styles.queueButton}
+            >
+              <Ionicons name="list" size={24} color="#00ff00" />
+              {downloadQueue.size > 0 && (
+                <View style={styles.queueBadge}>
+                  <Text style={styles.queueBadgeText}>{downloadQueue.size}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => setShowFilterModal(true)}
               style={styles.filterButton}
             >
