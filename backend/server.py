@@ -238,6 +238,23 @@ class DialResponse(BaseModel):
     mode: str  # "simulator" or "real_call"
     twilio_call_sid: Optional[str] = None
 
+class ConnectionHistoryEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    protocol: str
+    phone_number: str
+    isp_name: Optional[str] = None
+    mode: str  # "simulator" or "real_call"
+    status: str  # "success", "failed", "in_progress"
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    duration: Optional[float] = None  # in seconds
+    stages_completed: int = 0
+    total_stages: int = 0
+    twilio_call_sid: Optional[str] = None
+    recording_url: Optional[str] = None
+    handshake_data: Optional[Dict] = None
+
 # Initialize ISP database with known numbers
 @app.on_event("startup")
 async def startup_event():
