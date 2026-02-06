@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemeName } from './themes';
+import { ThemeName, getTheme } from './themes';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
