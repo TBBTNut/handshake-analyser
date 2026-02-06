@@ -516,27 +516,18 @@ async def dial_modem(request: DialRequest):
         mode=mode,
         twilio_call_sid=twilio_call_sid
     )
-    
-    # Create session
-    session_id = str(uuid.uuid4())
-    session_data = {
-        "session_id": session_id,
-        "protocol": request.protocol,
-        "phone_number": request.phone_number,
-        "isp_name": request.isp_name,
-        "started_at": datetime.utcnow(),
-        "status": "initiated"
-    }
-    await db.modem_sessions.insert_one(session_data)
-    
-    return DialResponse(
-        session_id=session_id,
-        protocol=request.protocol,
-        phone_number=request.phone_number,
-        stages=handshake_stages,
-        dial_tone_base64=dial_tone_base64,
-        estimated_duration=total_duration
-    )
+
+@api_router.post("/call-status/{session_id}")
+async def handle_call_status(session_id: str):
+    """Handle Twilio call status callbacks"""
+    try:
+        # Update session status based on call status
+        # This endpoint receives callbacks from Twilio about call progress
+        logger.info(f"Received call status callback for session {session_id}")
+        return {"status": "received"}
+    except Exception as e:
+        logger.error(f"Error handling call status: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @api_router.get("/session/{session_id}")
 async def get_session(session_id: str):
