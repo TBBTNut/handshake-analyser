@@ -426,34 +426,36 @@ export default function ModemEmulator() {
         {/* Handshake Analysis */}
         {handshakeStages.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>HANDSHAKE ANALYSIS</Text>
-            <View style={styles.stagesContainer}>
+            <Text style={[styles.sectionTitle, themedStyles.text]}>HANDSHAKE ANALYSIS</Text>
+            <View style={[styles.stagesContainer, themedStyles.surface, themedStyles.border]}>
               {handshakeStages.map((stage, index) => (
                 <View
                   key={stage.stage}
                   style={[
                     styles.stageRow,
-                    index === currentStage && isDialing && styles.stageRowActive,
-                    index < currentStage && styles.stageRowComplete,
+                    themedStyles.background,
+                    themedStyles.border,
+                    index === currentStage && isDialing && { backgroundColor: currentTheme.surfaceLight, borderColor: currentTheme.primary },
+                    index < currentStage && { opacity: 0.6 },
                   ]}
                 >
-                  <View style={styles.stageNumber}>
-                    <Text style={styles.stageNumberText}>{stage.stage}</Text>
+                  <View style={[styles.stageNumber, { backgroundColor: currentTheme.primary }]}>
+                    <Text style={[styles.stageNumberText, { color: currentTheme.background }]}>{stage.stage}</Text>
                   </View>
                   <View style={styles.stageInfo}>
-                    <Text style={styles.stageName}>{stage.name}</Text>
-                    <Text style={styles.stageDesc}>{stage.description}</Text>
+                    <Text style={[styles.stageName, themedStyles.text]}>{stage.name}</Text>
+                    <Text style={[styles.stageDesc, themedStyles.primary]}>{stage.description}</Text>
                     <View style={styles.stageDetails}>
-                      <Text style={styles.stageDetailText}>
+                      <Text style={[styles.stageDetailText, { color: currentTheme.textMuted }]}>
                         Freq: {stage.frequency}Hz | Duration: {stage.duration.toFixed(2)}s
                       </Text>
                     </View>
                   </View>
                   {index === currentStage && isDialing && (
-                    <ActivityIndicator size="small" color="#00ff00" />
+                    <ActivityIndicator size="small" color={currentTheme.primary} />
                   )}
                   {index < currentStage && (
-                    <Ionicons name="checkmark-circle" size={24} color="#00ff00" />
+                    <Ionicons name="checkmark-circle" size={24} color={currentTheme.success} />
                   )}
                 </View>
               ))}
@@ -464,9 +466,9 @@ export default function ModemEmulator() {
         {/* Dial Button */}
         <View style={styles.dialSection}>
           {!isDialing ? (
-            <TouchableOpacity style={styles.dialButton} onPress={startDialing}>
-              <Ionicons name="call" size={32} color="#000" />
-              <Text style={styles.dialButtonText}>DIAL</Text>
+            <TouchableOpacity style={[styles.dialButton, { backgroundColor: currentTheme.primary, borderRadius: currentTheme.borderRadius }]} onPress={startDialing}>
+              <Ionicons name="call" size={32} color={currentTheme.background} />
+              <Text style={[styles.dialButtonText, { color: currentTheme.background }]}>DIAL</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.stopButton} onPress={stopDialing}>
