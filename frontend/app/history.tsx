@@ -406,6 +406,28 @@ export default function History() {
     }
   };
 
+  const retryDownload = async (sessionId: string) => {
+    const item = downloadQueue.get(sessionId);
+    if (!item || item.status !== 'failed') return;
+
+    try {
+      // Increment retry count
+      const retryCount = (item.retryCount || 0) + 1;
+      
+      if (retryCount > 3) {
+        Alert.alert('Max Retries Reached', 'This download has failed 3 times. Please check your connection.');
+        return;
+      }
+
+      updateQueueItem(sessionId, { status: 'queued', progress: 0, retryCount });
+      
+      // Retry download
+      await processDownload(sessionId, item.url);
+    } catch (error) {
+      console.error('Error retrying download:', error);
+    }
+  };
+
   const clearCompletedDownloads = () => {
     setDownloadQueue((prev) => {
       const newQueue = new Map(prev);
