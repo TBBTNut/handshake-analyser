@@ -492,23 +492,31 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
     paddingVertical: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#00ff00',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingsButton: {
+    padding: 8,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#00ff00',
-    marginTop: 8,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#0f0',
-    marginTop: 4,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   statusBar: {
