@@ -1032,6 +1032,84 @@ export default function History() {
             </View>
           </View>
         </Modal>
+
+        {/* Download Queue Modal */}
+        <Modal
+          visible={showQueueModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowQueueModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Download Queue ({downloadQueue.size})</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <TouchableOpacity onPress={clearCompletedDownloads}>
+                    <Ionicons name="checkmark-done" size={24} color="#00ff00" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowQueueModal(false)}>
+                    <Ionicons name="close" size={28} color="#00ff00" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <ScrollView style={styles.modalScroll}>
+                {downloadQueue.size === 0 ? (
+                  <View style={styles.emptyQueueContainer}>
+                    <Ionicons name="cloud-download-outline" size={64} color="#333" />
+                    <Text style={styles.emptyQueueText}>No downloads in queue</Text>
+                    <Text style={styles.emptyQueueSubtext}>Downloads will appear here</Text>
+                  </View>
+                ) : (
+                  Array.from(downloadQueue.values()).map((item) => (
+                    <View key={item.sessionId} style={styles.queueItem}>
+                      <View style={styles.queueItemHeader}>
+                        <Ionicons
+                          name={getQueueStatusIcon(item.status)}
+                          size={24}
+                          color={getQueueStatusColor(item.status)}
+                        />
+                        <View style={styles.queueItemInfo}>
+                          <Text style={styles.queueItemSession}>
+                            {item.sessionId.substring(0, 8)}...
+                          </Text>
+                          <Text style={styles.queueItemStatus}>
+                            {item.status.toUpperCase()}
+                          </Text>
+                        </View>
+                        {(item.status === 'downloading' || item.status === 'queued') && (
+                          <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => cancelDownload(item.sessionId)}
+                          >
+                            <Ionicons name="close-circle" size={24} color="#ff0000" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {item.status === 'downloading' && (
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${item.progress * 100}%` },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.progressText}>
+                            {Math.round(item.progress * 100)}%
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
