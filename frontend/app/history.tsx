@@ -744,13 +744,35 @@ export default function History() {
                           ) : (
                             <>
                               {!sound ? (
-                                <TouchableOpacity
-                                  style={styles.playButtonLarge}
-                                  onPress={() => playRecording(selectedEntry.recording_url!)}
-                                >
-                                  <Ionicons name="play" size={32} color="#000" />
-                                  <Text style={styles.playButtonText}>Play Recording</Text>
-                                </TouchableOpacity>
+                                <>
+                                  <TouchableOpacity
+                                    style={styles.playButtonLarge}
+                                    onPress={() => playRecording(selectedEntry.recording_url!)}
+                                  >
+                                    <Ionicons name="play" size={32} color="#000" />
+                                    <Text style={styles.playButtonText}>Play Recording</Text>
+                                  </TouchableOpacity>
+                                  
+                                  <TouchableOpacity
+                                    style={styles.downloadButton}
+                                    onPress={() => downloadRecording(selectedEntry.recording_url!, selectedEntry.session_id)}
+                                    disabled={downloading}
+                                  >
+                                    {downloading ? (
+                                      <>
+                                        <ActivityIndicator size="small" color="#00ff00" />
+                                        <Text style={styles.downloadButtonText}>
+                                          Downloading {Math.round(downloadProgress * 100)}%
+                                        </Text>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Ionicons name="download" size={24} color="#00ff00" />
+                                        <Text style={styles.downloadButtonText}>Download Recording</Text>
+                                      </>
+                                    )}
+                                  </TouchableOpacity>
+                                </>
                               ) : (
                                 <>
                                   <View style={styles.audioControls}>
