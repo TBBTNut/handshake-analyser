@@ -375,37 +375,37 @@ export default function ModemEmulator() {
 
         {/* ISP Selection */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PHONE NUMBER</Text>
+          <Text style={[styles.sectionTitle, themedStyles.text]}>PHONE NUMBER</Text>
           
           <TouchableOpacity
-            style={styles.selectButton}
+            style={[styles.selectButton, themedStyles.surface, themedStyles.border]}
             onPress={() => setShowISPModal(true)}
             disabled={isDialing}
           >
-            <Ionicons name="list" size={20} color="#00ff00" />
-            <Text style={styles.selectButtonText}>
+            <Ionicons name="list" size={20} color={currentTheme.primary} />
+            <Text style={[styles.selectButtonText, themedStyles.text]}>
               {selectedISP ? `${selectedISP.name} (${selectedISP.phone_number})` : 'Select ISP'}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.selectButton}
+            style={[styles.selectButton, themedStyles.surface, themedStyles.border]}
             onPress={() => setShowCustomModal(true)}
             disabled={isDialing}
           >
-            <Ionicons name="create" size={20} color="#00ff00" />
-            <Text style={styles.selectButtonText}>
+            <Ionicons name="create" size={20} color={currentTheme.primary} />
+            <Text style={[styles.selectButtonText, themedStyles.text]}>
               {customNumber ? `Custom: ${customNumber}` : 'Enter Custom Number'}
             </Text>
           </TouchableOpacity>
 
           {twilioEnabled && (
-            <View style={styles.toggleContainer}>
+            <View style={[styles.toggleContainer, themedStyles.surface, themedStyles.border]}>
               <View style={styles.toggleInfo}>
-                <Ionicons name="call" size={20} color="#00ff00" />
+                <Ionicons name="call" size={20} color={currentTheme.primary} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.toggleLabel}>Real Phone Call Mode</Text>
-                  <Text style={styles.toggleHint}>
+                  <Text style={[styles.toggleLabel, themedStyles.text]}>Real Phone Call Mode</Text>
+                  <Text style={[styles.toggleHint, { color: currentTheme.textMuted }]}>
                     {useTwilio ? 'Using Twilio (actual call)' : 'Using simulator (audio only)'}
                   </Text>
                 </View>
