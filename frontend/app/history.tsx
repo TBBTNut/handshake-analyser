@@ -75,8 +75,12 @@ export default function History() {
     progress: number;
     status: 'queued' | 'downloading' | 'complete' | 'failed' | 'cancelled';
     resumable?: any;
+    retryCount?: number;
   }>>(new Map());
   const [showQueueModal, setShowQueueModal] = useState(false);
+  
+  // Theme state
+  const [theme, setTheme] = useState<'terminal' | 'windows95'>('terminal');
 
   useEffect(() => {
     loadHistory();
