@@ -307,6 +307,16 @@ export default function ModemEmulator() {
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.headerButton}
+              onPress={cycleTheme}
+            >
+              <Ionicons 
+                name={theme === 'terminal' ? 'terminal' : theme === 'windows95' ? 'desktop-outline' : theme === 'windowsXP' ? 'desktop' : 'logo-apple'} 
+                size={24} 
+                color="#00ff00" 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
               onPress={() => router.push('/history')}
             >
               <Ionicons name="time" size={24} color="#00ff00" />
