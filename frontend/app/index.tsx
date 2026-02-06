@@ -95,13 +95,18 @@ export default function ModemEmulator() {
 
   const loadInitialData = async () => {
     try {
-      const [protocolsRes, ispRes] = await Promise.all([
+      const [protocolsRes, ispRes, twilioRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/protocols`),
         axios.get(`${BACKEND_URL}/api/isp-numbers`),
+        axios.get(`${BACKEND_URL}/api/twilio/settings`),
       ]);
       
       setProtocols(protocolsRes.data.protocols);
       setIspNumbers(ispRes.data);
+      
+      if (twilioRes.data.configured && twilioRes.data.enabled) {
+        setTwilioEnabled(true);
+      }
       
       if (protocolsRes.data.protocols.length > 0) {
         setSelectedProtocol(protocolsRes.data.protocols[0].name);
