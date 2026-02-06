@@ -326,6 +326,12 @@ async def get_session(session_id: str):
     session = await db.modem_sessions.find_one({"session_id": session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    # Remove MongoDB's _id field to avoid ObjectId serialization issues
+    if "_id" in session:
+        del session["_id"]
+    # Convert datetime to string for JSON serialization
+    if "started_at" in session:
+        session["started_at"] = session["started_at"].isoformat()
     return session
 
 # Include the router in the main app
