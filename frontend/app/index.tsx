@@ -547,6 +547,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerButton: {
+    padding: 8,
+  },
   settingsButton: {
     padding: 8,
   },
