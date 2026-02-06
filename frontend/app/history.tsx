@@ -67,6 +67,16 @@ export default function History() {
   // Download states
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  
+  // Download queue states
+  const [downloadQueue, setDownloadQueue] = useState<Map<string, {
+    sessionId: string;
+    url: string;
+    progress: number;
+    status: 'queued' | 'downloading' | 'complete' | 'failed' | 'cancelled';
+    resumable?: any;
+  }>>(new Map());
+  const [showQueueModal, setShowQueueModal] = useState(false);
 
   useEffect(() => {
     loadHistory();
