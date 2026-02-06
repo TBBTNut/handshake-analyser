@@ -471,9 +471,9 @@ export default function ModemEmulator() {
               <Text style={[styles.dialButtonText, { color: currentTheme.background }]}>DIAL</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.stopButton} onPress={stopDialing}>
-              <Ionicons name="stop" size={32} color="#fff" />
-              <Text style={styles.stopButtonText}>STOP</Text>
+            <TouchableOpacity style={[styles.stopButton, { backgroundColor: currentTheme.error, borderRadius: currentTheme.borderRadius }]} onPress={stopDialing}>
+              <Ionicons name="stop" size={32} color={currentTheme.surface} />
+              <Text style={[styles.stopButtonText, { color: currentTheme.surface }]}>STOP</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -485,19 +485,19 @@ export default function ModemEmulator() {
           animationType="slide"
           onRequestClose={() => setShowISPModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select ISP</Text>
+          <View style={[styles.modalOverlay, { backgroundColor: theme === 'terminal' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.7)' }]}>
+            <View style={[styles.modalContent, themedStyles.surface, themedStyles.border]}>
+              <View style={[styles.modalHeader, themedStyles.border]}>
+                <Text style={[styles.modalTitle, themedStyles.text]}>Select ISP</Text>
                 <TouchableOpacity onPress={() => setShowISPModal(false)}>
-                  <Ionicons name="close" size={28} color="#00ff00" />
+                  <Ionicons name="close" size={28} color={currentTheme.primary} />
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.modalScroll}>
                 {ispNumbers.map((isp) => (
                   <TouchableOpacity
                     key={isp.id}
-                    style={styles.ispItem}
+                    style={[styles.ispItem, { borderBottomColor: currentTheme.border }]}
                     onPress={() => {
                       setSelectedISP(isp);
                       setCustomNumber('');
@@ -505,9 +505,9 @@ export default function ModemEmulator() {
                     }}
                   >
                     <View>
-                      <Text style={styles.ispName}>{isp.name}</Text>
-                      <Text style={styles.ispNumber}>{isp.phone_number}</Text>
-                      <Text style={styles.ispCountry}>{isp.country}</Text>
+                      <Text style={[styles.ispName, themedStyles.text]}>{isp.name}</Text>
+                      <Text style={[styles.ispNumber, themedStyles.primary]}>{isp.phone_number}</Text>
+                      <Text style={[styles.ispCountry, { color: currentTheme.textMuted }]}>{isp.country}</Text>
                     </View>
                     {selectedISP?.id === isp.id && (
                       <Ionicons name="checkmark-circle" size={24} color="#00ff00" />
