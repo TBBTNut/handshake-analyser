@@ -510,7 +510,7 @@ export default function ModemEmulator() {
                       <Text style={[styles.ispCountry, { color: currentTheme.textMuted }]}>{isp.country}</Text>
                     </View>
                     {selectedISP?.id === isp.id && (
-                      <Ionicons name="checkmark-circle" size={24} color="#00ff00" />
+                      <Ionicons name="checkmark-circle" size={24} color={currentTheme.success} />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -526,25 +526,25 @@ export default function ModemEmulator() {
           animationType="slide"
           onRequestClose={() => setShowCustomModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Enter Phone Number</Text>
+          <View style={[styles.modalOverlay, { backgroundColor: theme === 'terminal' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.7)' }]}>
+            <View style={[styles.modalContent, themedStyles.surface, themedStyles.border]}>
+              <View style={[styles.modalHeader, themedStyles.border]}>
+                <Text style={[styles.modalTitle, themedStyles.text]}>Enter Phone Number</Text>
                 <TouchableOpacity onPress={() => setShowCustomModal(false)}>
-                  <Ionicons name="close" size={28} color="#00ff00" />
+                  <Ionicons name="close" size={28} color={currentTheme.primary} />
                 </TouchableOpacity>
               </View>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, themedStyles.background, themedStyles.text, themedStyles.border]}
                   value={customNumber}
                   onChangeText={setCustomNumber}
                   placeholder="Enter phone number"
-                  placeholderTextColor="#666"
+                  placeholderTextColor={currentTheme.textMuted}
                   keyboardType="phone-pad"
                 />
                 <TouchableOpacity
-                  style={styles.submitButton}
+                  style={[styles.submitButton, { backgroundColor: currentTheme.primary, borderRadius: currentTheme.borderRadius }]}
                   onPress={() => {
                     if (customNumber) {
                       setSelectedISP(null);
