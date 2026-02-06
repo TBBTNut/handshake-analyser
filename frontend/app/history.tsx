@@ -555,6 +555,16 @@ export default function History() {
                     <Text style={styles.actionButtonText}>CSV</Text>
                   </TouchableOpacity>
 
+                  {entry.recording_url && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => downloadRecording(entry.recording_url!, entry.session_id)}
+                    >
+                      <Ionicons name="download" size={16} color="#00ff00" />
+                      <Text style={styles.actionButtonText}>Audio</Text>
+                    </TouchableOpacity>
+                  )}
+
                   <TouchableOpacity
                     style={[styles.actionButton, styles.deleteActionButton]}
                     onPress={() => deleteEntry(entry.session_id)}
