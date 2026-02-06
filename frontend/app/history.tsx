@@ -1603,6 +1603,9 @@ const styles = StyleSheet.create({
   downloadAllButton: {
     padding: 8,
   },
+  themeButton: {
+    padding: 8,
+  },
   queueButton: {
     padding: 8,
     position: 'relative',
