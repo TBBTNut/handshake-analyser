@@ -265,31 +265,61 @@ export default function History() {
 
   const downloadRecording = async (recordingUrl: string, sessionId: string) => {
     try {
-      setDownloading(true);
-      setDownloadProgress(0);
+      // Check if already in queue
+      if (downloadQueue.has(sessionId)) {
+        Alert.alert('Already Downloading', 'This recording is already in the download queue');
+        return;
+      }
 
-      // Create filename
+      // Add to queue
+      const newQueue = new Map(downloadQueue);
+      newQueue.set(sessionId, {
+        sessionId,
+        url: recordingUrl,
+        progress: 0,
+        status: 'queued',
+      });
+      setDownloadQueue(newQueue);
+      setShowQueueModal(true);
+
+      // Start download
+      await processDownload(sessionId, recordingUrl);
+    } catch (error: any) {
+      console.error('Error adding to download queue:', error);
+      Alert.alert('Error', 'Failed to add recording to download queue');
+    }
+  };
+
+  const processDownload = async (sessionId: string, recordingUrl: string) => {
+    try {
+      // Update status to downloading
+      updateQueueItem(sessionId, { status: 'downloading', progress: 0 });
+
       const timestamp = new Date().getTime();
       const fileName = `recording_${sessionId}_${timestamp}.mp3`;
       const fileUri = FileSystem.documentDirectory + fileName;
 
-      // Download with progress tracking
+      // Create download resumable
       const downloadResumable = FileSystem.createDownloadResumable(
         recordingUrl,
         fileUri,
         {},
         (downloadProgress) => {
           const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-          setDownloadProgress(progress);
+          updateQueueItem(sessionId, { progress });
         }
       );
+
+      // Store resumable for cancellation
+      updateQueueItem(sessionId, { resumable: downloadResumable });
 
       const result = await downloadResumable.downloadAsync();
       
       if (result) {
-        setDownloading(false);
-        setDownloadProgress(0);
-
+        // Update status to complete
+        updateQueueItem(sessionId, { status: 'complete', progress: 1 });
+        
+        // Show completion notification
         Alert.alert(
           'Download Complete',
           `Recording saved to:\n${result.uri}`,
@@ -311,9 +341,136 @@ export default function History() {
       }
     } catch (error: any) {
       console.error('Error downloading recording:', error);
-      setDownloading(false);
-      setDownloadProgress(0);
+      updateQueueItem(sessionId, { status: 'failed', progress: 0 });
       Alert.alert('Download Failed', error.message || 'Failed to download recording');
+    }
+  };
+
+  const updateQueueItem = (sessionId: string, updates: Partial<any>) => {
+    setDownloadQueue((prev) => {
+      const newQueue = new Map(prev);
+      const item = newQueue.get(sessionId);
+      if (item) {
+        newQueue.set(sessionId, { ...item, ...updates });
+      }
+      return newQueue;
+    });
+  };
+
+  const cancelDownload = async (sessionId: string) => {
+    const item = downloadQueue.get(sessionId);
+    if (!item) return;
+
+    try {
+      if (item.resumable && item.status === 'downloading') {
+        await item.resumable.pauseAsync();
+      }
+      updateQueueItem(sessionId, { status: 'cancelled', progress: 0 });
+      
+      // Remove from queue after a delay
+      setTimeout(() => {
+        setDownloadQueue((prev) => {
+          const newQueue = new Map(prev);
+          newQueue.delete(sessionId);
+          return newQueue;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Error cancelling download:', error);
+    }
+  };
+
+  const clearCompletedDownloads = () => {
+    setDownloadQueue((prev) => {
+      const newQueue = new Map(prev);
+      for (const [key, value] of newQueue.entries()) {
+        if (value.status === 'complete' || value.status === 'failed' || value.status === 'cancelled') {
+          newQueue.delete(key);
+        }
+      }
+      return newQueue;
+    });
+  };
+
+  const downloadAllRecordings = async () => {
+    const recordingsToDownload = history.filter(entry => entry.recording_url);
+    
+    if (recordingsToDownload.length === 0) {
+      Alert.alert('No Recordings', 'No recordings available to download');
+      return;
+    }
+
+    Alert.alert(
+      'Download All Recordings',
+      `Download ${recordingsToDownload.length} recording(s)?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Download',
+          onPress: async () => {
+            setShowQueueModal(true);
+            
+            for (const entry of recordingsToDownload) {
+              // Add to queue if not already there
+              if (!downloadQueue.has(entry.session_id)) {
+                const newQueue = new Map(downloadQueue);
+                newQueue.set(entry.session_id, {
+                  sessionId: entry.session_id,
+                  url: entry.recording_url!,
+                  progress: 0,
+                  status: 'queued',
+                });
+                setDownloadQueue(newQueue);
+              }
+            }
+
+            // Process downloads sequentially
+            for (const entry of recordingsToDownload) {
+              if (!downloadQueue.has(entry.session_id) || downloadQueue.get(entry.session_id)?.status === 'queued') {
+                await processDownload(entry.session_id, entry.recording_url!);
+                // Small delay between downloads
+                await new Promise(resolve => setTimeout(resolve, 500));
+              }
+            }
+
+            Alert.alert('Success', `Downloaded ${recordingsToDownload.length} recording(s)`);
+          },
+        },
+      ]
+    );
+  };
+
+  const getQueueStatusIcon = (status: string) => {
+    switch (status) {
+      case 'queued':
+        return 'hourglass';
+      case 'downloading':
+        return 'download';
+      case 'complete':
+        return 'checkmark-circle';
+      case 'failed':
+        return 'close-circle';
+      case 'cancelled':
+        return 'ban';
+      default:
+        return 'help-circle';
+    }
+  };
+
+  const getQueueStatusColor = (status: string) => {
+    switch (status) {
+      case 'queued':
+        return '#ffff00';
+      case 'downloading':
+        return '#00ff00';
+      case 'complete':
+        return '#00ff00';
+      case 'failed':
+        return '#ff0000';
+      case 'cancelled':
+        return '#888';
+      default:
+        return '#888';
     }
   };
 
