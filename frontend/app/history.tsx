@@ -253,6 +253,60 @@ export default function History() {
     }
   };
 
+  const downloadRecording = async (recordingUrl: string, sessionId: string) => {
+    try {
+      setDownloading(true);
+      setDownloadProgress(0);
+
+      // Create filename
+      const timestamp = new Date().getTime();
+      const fileName = `recording_${sessionId}_${timestamp}.mp3`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      // Download with progress tracking
+      const downloadResumable = FileSystem.createDownloadResumable(
+        recordingUrl,
+        fileUri,
+        {},
+        (downloadProgress) => {
+          const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+          setDownloadProgress(progress);
+        }
+      );
+
+      const result = await downloadResumable.downloadAsync();
+      
+      if (result) {
+        setDownloading(false);
+        setDownloadProgress(0);
+
+        Alert.alert(
+          'Download Complete',
+          `Recording saved to:\n${result.uri}`,
+          [
+            { text: 'OK', style: 'default' },
+            {
+              text: 'Share',
+              onPress: async () => {
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(result.uri, {
+                    mimeType: 'audio/mpeg',
+                    dialogTitle: 'Share Recording',
+                  });
+                }
+              },
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Error downloading recording:', error);
+      setDownloading(false);
+      setDownloadProgress(0);
+      Alert.alert('Download Failed', error.message || 'Failed to download recording');
+    }
+  };
+
   const deleteEntry = async (sessionId: string) => {
     Alert.alert(
       'Delete Entry',
