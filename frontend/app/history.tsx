@@ -85,6 +85,7 @@ export default function History() {
   useEffect(() => {
     loadHistory();
     setupAudio();
+    loadTheme();
     
     return () => {
       if (sound) {
@@ -92,6 +93,26 @@ export default function History() {
       }
     };
   }, []);
+
+  const loadTheme = async () => {
+    try {
+      const savedTheme = await AsyncStorage.getItem('app_theme');
+      if (savedTheme === 'windows95' || savedTheme === 'terminal') {
+        setTheme(savedTheme);
+      }
+    } catch (error) {
+      console.error('Error loading theme:', error);
+    }
+  };
+
+  const saveTheme = async (newTheme: 'terminal' | 'windows95') => {
+    try {
+      await AsyncStorage.setItem('app_theme', newTheme);
+      setTheme(newTheme);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
+  };
 
   const setupAudio = async () => {
     try {
