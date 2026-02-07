@@ -593,6 +593,7 @@ export default function ModemEmulator() {
           </View>
         </Modal>
       </ScrollView>
+      <Toast />
     </SafeAreaView>
   );
 }
