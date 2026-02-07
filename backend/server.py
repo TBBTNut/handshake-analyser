@@ -59,14 +59,23 @@ class ModemProtocol:
         ]
         
         if protocol in ["V.90", "V.92"]:
-            base_stages.extend([
-                {"stage": 9, "name": "Digital Probe", "description": "Testing digital connection", "frequency": 2225, "duration": 1.0},
-                {"stage": 10, "name": "Speed Negotiation", "description": "Negotiating 56K speed", "frequency": 2400, "duration": 0.8},
-                {"stage": 11, "name": "Final Training", "description": "Final handshake training", "frequency": 2600, "duration": 0.7},
-                {"stage": 12, "name": "Connected", "description": "Connection established", "frequency": 0, "duration": 0.5},
-            ])
             if protocol == "V.92":
-                base_stages.insert(9, {"stage": 9, "name": "QC Mode", "description": "Quick Connect mode check", "frequency": 2200, "duration": 0.4})
+                # V.92 has Quick Connect as stage 9
+                base_stages.extend([
+                    {"stage": 9, "name": "QC Mode", "description": "Quick Connect mode check", "frequency": 2200, "duration": 0.4},
+                    {"stage": 10, "name": "Digital Probe", "description": "Testing digital connection", "frequency": 2225, "duration": 1.0},
+                    {"stage": 11, "name": "Speed Negotiation", "description": "Negotiating 56K speed", "frequency": 2400, "duration": 0.8},
+                    {"stage": 12, "name": "Final Training", "description": "Final handshake training", "frequency": 2600, "duration": 0.7},
+                    {"stage": 13, "name": "Connected", "description": "Connection established", "frequency": 0, "duration": 0.5},
+                ])
+            else:
+                # V.90 standard stages
+                base_stages.extend([
+                    {"stage": 9, "name": "Digital Probe", "description": "Testing digital connection", "frequency": 2225, "duration": 1.0},
+                    {"stage": 10, "name": "Speed Negotiation", "description": "Negotiating 56K speed", "frequency": 2400, "duration": 0.8},
+                    {"stage": 11, "name": "Final Training", "description": "Final handshake training", "frequency": 2600, "duration": 0.7},
+                    {"stage": 12, "name": "Connected", "description": "Connection established", "frequency": 0, "duration": 0.5},
+                ])
         
         elif protocol == "V.34":
             base_stages.extend([
