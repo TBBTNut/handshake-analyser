@@ -22,6 +22,7 @@ import * as FileSystem from 'expo-file-system';
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
