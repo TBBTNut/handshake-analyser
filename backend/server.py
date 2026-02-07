@@ -86,33 +86,128 @@ class AudioGenerator:
     SAMPLE_RATE = 44100
     
     @staticmethod
-    def generate_tone(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE) -> bytes:
-        """Generate a sine wave tone"""
-        if frequency == 0:
+    def generate_complex_modem_tone(base_frequency: float, duration: float, stage_type: str = "carrier", sample_rate: int = SAMPLE_RATE) -> bytes:
+        """Generate complex modem tones with harmonics, modulation, and noise"""
+        if base_frequency == 0:
             # Silence
             samples = np.zeros(int(sample_rate * duration))
         else:
             t = np.linspace(0, duration, int(sample_rate * duration), False)
-            # Add some harmonics for more authentic modem sound
-            samples = np.sin(frequency * 2 * np.pi * t) * 0.3
-            samples += np.sin(frequency * 2 * 2 * np.pi * t) * 0.1
-            samples += np.sin(frequency * 3 * 2 * np.pi * t) * 0.05
+            samples = np.zeros_like(t)
             
-            # Add some noise for realism
-            noise = np.random.normal(0, 0.02, samples.shape)
+            if stage_type == "answer_tone":
+                # 2100 Hz answer tone with phase reversals
+                carrier = np.sin(base_frequency * 2 * np.pi * t)
+                # Add phase reversals every 450ms
+                reversal_interval = 0.45
+                reversals = int(duration / reversal_interval)
+                for i in range(reversals):
+                    start_idx = int(i * reversal_interval * sample_rate)
+                    end_idx = min(int((i + 1) * reversal_interval * sample_rate), len(carrier))
+                    if i % 2 == 1:
+                        carrier[start_idx:end_idx] *= -1
+                samples = carrier * 0.4
+                
+            elif stage_type == "scrambled":
+                # Scrambled digital signal (multiple frequencies)
+                freqs = [base_frequency, base_frequency * 1.5, base_frequency * 2.1, base_frequency * 2.7]
+                for freq in freqs:
+                    # Add frequency with random phase modulation
+                    phase_mod = np.random.random() * 2 * np.pi
+                    samples += np.sin(freq * 2 * np.pi * t + phase_mod) * (0.15 / len(freqs))
+                
+                # Add amplitude modulation (warbling effect)
+                am_freq = 15  # Hz
+                am = 0.7 + 0.3 * np.sin(am_freq * 2 * np.pi * t)
+                samples *= am
+                
+            elif stage_type == "training":
+                # Training sequence with rapid frequency sweeps
+                # Sweep from base to 2x frequency
+                sweep = np.linspace(base_frequency, base_frequency * 2, len(t))
+                samples = np.sin(2 * np.pi * np.cumsum(sweep) / sample_rate) * 0.3
+                
+                # Add rapid clicks/pulses
+                pulse_freq = 75  # Hz
+                pulses = np.sin(pulse_freq * 2 * np.pi * t) > 0.7
+                samples += pulses * 0.1
+                
+            elif stage_type == "negotiation":
+                # Complex multi-carrier signal
+                # Simulate QAM-like signal with multiple carriers
+                carriers = np.linspace(base_frequency - 200, base_frequency + 200, 8)
+                for i, freq in enumerate(carriers):
+                    phase = np.random.random() * 2 * np.pi
+                    amplitude = 0.05 + 0.03 * np.sin(i * 0.5)
+                    samples += np.sin(freq * 2 * np.pi * t + phase) * amplitude
+                
+                # Add frequency modulation
+                fm_freq = 5
+                fm = np.sin(fm_freq * 2 * np.pi * t) * 50
+                samples *= (1 + 0.3 * np.sin(2 * np.pi * np.cumsum(fm) / sample_rate))
+                
+            else:  # "carrier" or default
+                # Rich carrier signal with harmonics
+                samples = np.sin(base_frequency * 2 * np.pi * t) * 0.25
+                
+                # Add harmonics (overtones)
+                harmonics = [
+                    (2, 0.15),   # 2nd harmonic
+                    (3, 0.08),   # 3rd harmonic
+                    (4, 0.04),   # 4th harmonic
+                    (5, 0.02),   # 5th harmonic
+                ]
+                for mult, amp in harmonics:
+                    samples += np.sin(base_frequency * mult * 2 * np.pi * t) * amp
+                
+                # Add slight frequency modulation (warble)
+                fm_freq = 7  # Hz
+                fm = np.sin(fm_freq * 2 * np.pi * t) * 3
+                samples *= (1 + 0.1 * np.sin(2 * np.pi * np.cumsum(fm) / sample_rate))
+            
+            # Add realistic noise (important for modem sound)
+            noise_level = 0.03 if stage_type == "negotiation" else 0.015
+            noise = np.random.normal(0, noise_level, samples.shape)
             samples += noise
             
-            # Apply envelope to avoid clicks
+            # Add occasional "clicks" for digital signals
+            if stage_type in ["scrambled", "negotiation", "training"]:
+                click_probability = 0.002
+                clicks = np.random.random(len(samples)) < click_probability
+                samples += clicks * np.random.uniform(-0.15, 0.15, len(samples))
+            
+            # Apply envelope to avoid clicks at start/end
             envelope = np.ones_like(samples)
-            fade_samples = int(sample_rate * 0.01)  # 10ms fade
-            envelope[:fade_samples] = np.linspace(0, 1, fade_samples)
-            envelope[-fade_samples:] = np.linspace(1, 0, fade_samples)
+            fade_samples = int(sample_rate * 0.02)  # 20ms fade
+            if fade_samples > 0:
+                envelope[:fade_samples] = np.linspace(0, 1, fade_samples)
+                envelope[-fade_samples:] = np.linspace(1, 0, fade_samples)
             samples *= envelope
+        
+        # Compress dynamics (typical of phone line)
+        samples = np.tanh(samples * 1.5) * 0.8
         
         # Convert to 16-bit PCM
         samples = np.clip(samples, -1, 1)
         samples = (samples * 32767).astype(np.int16)
         return samples.tobytes()
+    
+    @staticmethod
+    def generate_tone(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE) -> bytes:
+        """Generate a tone - wrapper that determines stage type"""
+        # Map frequency ranges to stage types for more realistic sounds
+        if frequency == 2100:
+            stage_type = "answer_tone"
+        elif frequency >= 2200 and frequency <= 2600:
+            stage_type = "negotiation"
+        elif frequency >= 1900 and frequency < 2200:
+            stage_type = "training"
+        elif frequency >= 1300 and frequency < 1900:
+            stage_type = "scrambled"
+        else:
+            stage_type = "carrier"
+        
+        return AudioGenerator.generate_complex_modem_tone(frequency, duration, stage_type, sample_rate)
     
     @staticmethod
     def generate_dial_tone(phone_number: str) -> bytes:
