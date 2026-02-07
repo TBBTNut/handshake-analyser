@@ -460,6 +460,22 @@ export default function ModemEmulator() {
                 </View>
               ))}
             </View>
+            
+            {/* Reset Button below checklist */}
+            {!isDialing && handshakeStages.length > 0 && (
+              <TouchableOpacity
+                style={[styles.resetButton, { backgroundColor: currentTheme.surface, borderColor: currentTheme.border, borderRadius: currentTheme.borderRadius }]}
+                onPress={() => {
+                  setHandshakeStages([]);
+                  setCurrentStage(0);
+                  setConnectionStatus('Ready');
+                  setCurrentSessionId(null);
+                }}
+              >
+                <Ionicons name="refresh" size={20} color={currentTheme.primary} />
+                <Text style={[styles.resetButtonText, { color: currentTheme.text }]}>RESET</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
