@@ -96,18 +96,23 @@ class AudioGenerator:
     
     @staticmethod
     def generate_complex_modem_tone(base_frequency: float, duration: float, stage_type: str = "carrier", sample_rate: int = SAMPLE_RATE) -> bytes:
-        """Generate ultra-realistic modem tones with proper FSK/PSK modulation"""
+        """Generate ultra-realistic modem tones matching actual V.90/V.92 handshakes"""
         if base_frequency == 0:
-            # Silence with very faint line noise
-            samples = np.random.normal(0, 0.001, int(sample_rate * duration))
+            # Silence with faint line noise (phone line is never truly silent)
+            samples = np.random.normal(0, 0.002, int(sample_rate * duration))
         else:
             t = np.linspace(0, duration, int(sample_rate * duration), False)
             samples = np.zeros_like(t)
             
             if stage_type == "answer_tone":
-                # Classic 2100 Hz answer tone with 180° phase reversals
-                carrier = np.sin(base_frequency * 2 * np.pi * t)
-                # Phase reversals every 450ms (exact spec)
+                # ANSam: 2100 Hz with 15 Hz amplitude modulation + 450ms phase reversals
+                carrier = np.sin(base_frequency * 2 * np.pi * t) * 0.6
+                
+                # 15 Hz amplitude modulation (index ~0.19)
+                am_mod = 1 + 0.19 * np.sin(15 * 2 * np.pi * t)
+                carrier *= am_mod
+                
+                # Phase reversals every 450ms (~187° per ITU spec)
                 reversal_samples = int(0.45 * sample_rate)
                 num_reversals = int(len(t) / reversal_samples)
                 for i in range(num_reversals):
@@ -115,151 +120,175 @@ class AudioGenerator:
                         start = i * reversal_samples
                         end = min((i + 1) * reversal_samples, len(carrier))
                         carrier[start:end] *= -1
-                samples = carrier * 0.5
-                # Add slight frequency wobble from phone line
-                wobble = 1 + 0.002 * np.sin(8 * 2 * np.pi * t)
-                samples *= wobble
+                
+                samples = carrier
                 
             elif stage_type == "scrambled":
-                # FSK modulation - switching between two frequencies (like Bell 103)
-                freq_low = base_frequency - 100
-                freq_high = base_frequency + 100
-                # Random bit pattern for scrambled data
-                bit_duration = int(sample_rate * 0.00083)  # ~1200 baud
-                bits = np.random.randint(0, 2, int(len(t) / bit_duration) + 1)
+                # True FSK at 1200 baud with V.21 style modulation
+                # Bell 103: Mark=1270Hz, Space=1070Hz (but use centered on base_freq)
+                mark_freq = base_frequency + 85
+                space_freq = base_frequency - 85
+                
+                # Generate random bit stream at 1200 baud
+                baud_rate = 1200
+                samples_per_bit = int(sample_rate / baud_rate)
+                num_bits = int(duration * baud_rate)
+                bits = np.random.randint(0, 2, num_bits)
                 
                 for i, bit in enumerate(bits):
-                    start = i * bit_duration
-                    end = min((i + 1) * bit_duration, len(t))
+                    start = i * samples_per_bit
+                    end = min((i + 1) * samples_per_bit, len(t))
                     if start < len(t):
-                        seg_t = t[start:end]
-                        freq = freq_high if bit else freq_low
-                        samples[start:end] = np.sin(freq * 2 * np.pi * seg_t) * 0.4
+                        seg_t = t[start:end] - t[start]
+                        freq = mark_freq if bit else space_freq
+                        # Continuous phase FSK
+                        phase_offset = 0 if i == 0 else (samples[start-1] if start > 0 else 0)
+                        samples[start:end] = np.sin(freq * 2 * np.pi * seg_t) * 0.5
                 
-                # Add carrier harmonics
-                samples += np.sin(base_frequency * 2 * 2 * np.pi * t) * 0.1
+                # Add scrambler harmonics
+                samples += np.sin(base_frequency * 3 * 2 * np.pi * t) * 0.08
                 
             elif stage_type == "training":
-                # Rapid frequency sweep with bursts (training sequence)
-                # Start with short silence bursts
-                burst_duration = int(sample_rate * 0.01)  # 10ms bursts
-                num_bursts = int(len(t) / burst_duration)
+                # DIL (Digital Impairment Learning) - the iconic "bong-bong" sound
+                # Generate scrambled wideband burst pattern
                 
-                for i in range(num_bursts):
-                    start = i * burst_duration
-                    end = min((i + 1) * burst_duration, len(t))
-                    seg_t = t[start:end] - t[start]
-                    
-                    # Sweep frequency during each burst
-                    freq_sweep = base_frequency + (base_frequency * 0.5 * i / num_bursts)
-                    samples[start:end] = np.sin(freq_sweep * 2 * np.pi * seg_t) * 0.45
-                    
-                    # Add sharp attack for digital quality
-                    if len(seg_t) > 10:
-                        attack = np.linspace(0, 1, 10)
-                        samples[start:start+10] *= attack
+                # Create burst pattern (on-off-on-off)
+                burst_freq = 30  # Hz (bursts per second)
+                burst_pattern = (np.sin(burst_freq * 2 * np.pi * t) > 0).astype(float)
+                burst_pattern = burst_pattern * 0.5 + 0.3  # 0.3 to 0.8 range
                 
-                # Add chirp-like effect
-                chirp_mod = np.sin(75 * 2 * np.pi * t)
-                samples *= (0.5 + 0.5 * (chirp_mod > 0))
+                # Wideband scrambled signal (300-3000 Hz)
+                # Multiple carriers to create "electric snowstorm" effect
+                num_carriers = 32
+                for i in range(num_carriers):
+                    carrier_freq = 600 + (i * 75)  # Spread across voiceband
+                    phase = np.random.random() * 2 * np.pi
+                    # Random amplitude per carrier
+                    amp = np.random.uniform(0.01, 0.03)
+                    samples += np.sin(carrier_freq * 2 * np.pi * t + phase) * amp
+                
+                # Apply burst pattern
+                samples *= burst_pattern
+                
+                # Add "chirp" sweeps (pitch shifting characteristic)
+                sweep_rate = 800  # Hz per second
+                chirp = np.sin(2 * np.pi * (base_frequency * t + 0.5 * sweep_rate * t**2))
+                samples += chirp * 0.15 * burst_pattern
                 
             elif stage_type == "negotiation":
-                # PSK (Phase Shift Keying) - multiple phase-shifted carriers
-                # Simulate QAM constellation
-                num_carriers = 16  # Denser carrier set
-                carrier_spacing = 25  # Hz apart
-                start_freq = base_frequency - (num_carriers * carrier_spacing / 2)
+                # V.90 INFO sequences - scrambled data with multiple carriers
+                # This is the dense "warbling static" sound
+                
+                # Create scrambled wideband signal
+                # 128 tone QAM-like constellation
+                num_carriers = 48  # Dense carrier set
+                carrier_spacing = 40  # Hz apart
+                start_freq = 400  # Start at lower frequency
                 
                 for i in range(num_carriers):
                     carrier_freq = start_freq + (i * carrier_spacing)
-                    # Random phase shift for each carrier (QPSK-like)
-                    phase = np.random.choice([0, np.pi/2, np.pi, 3*np.pi/2])
-                    amplitude = 0.5 / num_carriers
+                    if carrier_freq > 3400:  # Stay in voiceband
+                        break
                     
-                    # Add phase modulation (data transmission)
-                    bit_rate = 2400  # Symbol rate
-                    symbols = np.random.choice([0, np.pi/2, np.pi, 3*np.pi/2], 
-                                              size=int(duration * bit_rate) + 1)
-                    
-                    carrier_signal = np.zeros_like(t)
-                    samples_per_symbol = int(sample_rate / bit_rate)
-                    
-                    for j, sym_phase in enumerate(symbols):
-                        start = j * samples_per_symbol
-                        end = min((j + 1) * samples_per_symbol, len(t))
-                        if start < len(t):
-                            seg_t = t[start:end]
-                            carrier_signal[start:end] = np.sin(
-                                carrier_freq * 2 * np.pi * seg_t + phase + sym_phase
-                            ) * amplitude
-                    
-                    samples += carrier_signal
+                    # Random QPSK modulation on each carrier
+                    symbol_rate = 3000  # High symbol rate for dense sound
+                    symbols_per_sec = int(duration * symbol_rate)
+                    if symbols_per_sec > 0:
+                        phases = np.random.choice([0, np.pi/2, np.pi, 3*np.pi/2], size=symbols_per_sec)
+                        samples_per_symbol = max(1, int(sample_rate / symbol_rate))
+                        
+                        carrier_sig = np.zeros_like(t)
+                        for j, phase in enumerate(phases):
+                            start = j * samples_per_symbol
+                            end = min((j + 1) * samples_per_symbol, len(t))
+                            if start < len(t):
+                                seg_t = t[start:end] - t[start]
+                                carrier_sig[start:end] = np.sin(carrier_freq * 2 * np.pi * seg_t + phase)
+                        
+                        # Vary amplitude per carrier
+                        amp = 0.015 * (1 + 0.3 * np.sin(i * 0.3))
+                        samples += carrier_sig * amp
                 
-                # Add "breathing" amplitude modulation
-                breath = 0.8 + 0.2 * np.sin(12 * 2 * np.pi * t)
-                samples *= breath
+                # Add breathing/warbling effect
+                warble = 0.7 + 0.3 * np.sin(7 * 2 * np.pi * t) * np.sin(23 * 2 * np.pi * t)
+                samples *= warble
                 
             else:  # "carrier" or default
-                # Rich carrier with realistic imperfections
-                carrier = np.sin(base_frequency * 2 * np.pi * t) * 0.35
+                # V.34 style carrier with proper harmonic structure
+                carrier = np.sin(base_frequency * 2 * np.pi * t) * 0.4
                 
-                # Add harmonics with proper rolloff
-                harmonics = [(2, 0.12), (3, 0.06), (4, 0.03), (5, 0.015), (7, 0.008)]
+                # Add harmonics (bell-like)
+                harmonics = [(2, 0.15), (3, 0.08), (4, 0.04), (5, 0.02), (6, 0.01)]
                 for mult, amp in harmonics:
                     carrier += np.sin(base_frequency * mult * 2 * np.pi * t) * amp
                 
-                # Add frequency jitter (phone line instability)
-                jitter_freq = 11  # Hz
-                jitter = np.sin(jitter_freq * 2 * np.pi * t) * 2
-                phase_jitter = np.cumsum(jitter) * 2 * np.pi / sample_rate
-                carrier *= np.cos(phase_jitter) * 0.15 + 0.85
+                # Phone line "flutter" (frequency instability)
+                flutter_freq = 3  # Hz
+                flutter = np.sin(flutter_freq * 2 * np.pi * t) * 8
+                phase_mod = np.cumsum(flutter) * 2 * np.pi / sample_rate
+                carrier *= (1 + 0.05 * np.sin(phase_mod))
                 
                 samples = carrier
             
-            # Add realistic phone line noise
-            if stage_type == "negotiation":
-                noise_level = 0.025  # Higher for complex signals
-            elif stage_type == "training":
-                noise_level = 0.018
+            # Add realistic phone line noise (bandlimited)
+            if stage_type == "negotiation" or stage_type == "training":
+                noise_level = 0.035  # Higher for complex signals
+            elif stage_type == "scrambled":
+                noise_level = 0.02
             else:
-                noise_level = 0.01
+                noise_level = 0.012
             
-            # Colored noise (not white) - phone lines have frequency response
+            # Generate bandlimited noise (300-3400 Hz voiceband)
             white_noise = np.random.normal(0, noise_level, len(samples))
-            # Simple low-pass filter for colored noise
-            if len(white_noise) > 3:
-                colored_noise = np.convolve(white_noise, [0.25, 0.5, 0.25], mode='same')
+            # Simple bandpass: moving average for lowpass, difference for highpass
+            kernel_size = 7
+            kernel = np.ones(kernel_size) / kernel_size
+            if len(white_noise) > kernel_size:
+                lowpass = np.convolve(white_noise, kernel, mode='same')
+                bandlimited = lowpass - np.convolve(lowpass, kernel, mode='same') * 0.5
+                samples += bandlimited
             else:
-                colored_noise = white_noise
-            samples += colored_noise
+                samples += white_noise
             
-            # Add occasional "dropouts" and "clicks" (line artifacts)
+            # Add telephone line artifacts
             if stage_type in ["scrambled", "negotiation", "training"]:
-                dropout_prob = 0.0005
-                dropouts = np.random.random(len(samples)) < dropout_prob
-                samples[dropouts] *= np.random.uniform(0.1, 0.4, np.sum(dropouts))
+                # Occasional bit errors / glitches
+                glitch_prob = 0.0008
+                glitches = np.random.random(len(samples)) < glitch_prob
+                samples[glitches] *= np.random.uniform(0.2, 1.8, np.sum(glitches))
                 
-                # Digital clicks
-                click_prob = 0.001
-                clicks = np.random.random(len(samples)) < click_prob
-                samples[clicks] += np.random.uniform(-0.2, 0.2, np.sum(clicks))
+                # Sharp transients (digital artifacts)
+                transient_prob = 0.0003
+                transients = np.random.random(len(samples)) < transient_prob
+                samples[transients] += np.random.uniform(-0.25, 0.25, np.sum(transients))
             
-            # Apply envelope (prevent clicks at boundaries)
-            fade_ms = 25  # 25ms fade
+            # Envelope shaping (prevent clicks)
+            fade_ms = 30
             fade_samples = int(sample_rate * fade_ms / 1000)
             if fade_samples > 0 and len(samples) > fade_samples * 2:
                 envelope = np.ones_like(samples)
-                envelope[:fade_samples] = np.linspace(0, 1, fade_samples) ** 2  # Squared for smoother
-                envelope[-fade_samples:] = np.linspace(1, 0, fade_samples) ** 2
+                # Smooth cosine fade
+                fade_in = 0.5 - 0.5 * np.cos(np.linspace(0, np.pi, fade_samples))
+                fade_out = 0.5 + 0.5 * np.cos(np.linspace(0, np.pi, fade_samples))
+                envelope[:fade_samples] = fade_in
+                envelope[-fade_samples:] = fade_out
                 samples *= envelope
         
-        # Phone line compression (reduces dynamic range)
-        samples = np.tanh(samples * 2.2) * 0.7
+        # Telephone line compression (AGC and bandwidth limiting)
+        # Soft clipping like phone line companding
+        samples = np.tanh(samples * 2.5) * 0.65
         
-        # Add very subtle AC hum (50/60 Hz) for extra realism
-        if base_frequency > 0:
-            hum = np.sin(60 * 2 * np.pi * t) * 0.002
+        # Add 60 Hz power line hum (very subtle)
+        if base_frequency > 0 and len(t) > 0:
+            hum = np.sin(60 * 2 * np.pi * t) * 0.003
             samples += hum
+        
+        # Simulate line rolloff (attenuation at high frequencies)
+        if stage_type in ["negotiation", "training"]:
+            # Simple high-frequency rolloff
+            if len(samples) > 20:
+                rolloff_kernel = np.array([0.05, 0.15, 0.6, 0.15, 0.05])
+                samples = np.convolve(samples, rolloff_kernel, mode='same')
         
         # Convert to 16-bit PCM
         samples = np.clip(samples, -1, 1)
