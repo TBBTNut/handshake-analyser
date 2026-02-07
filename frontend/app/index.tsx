@@ -106,10 +106,25 @@ export default function ModemEmulator() {
     const nextIndex = (currentIndex + 1) % themes.length;
     const newTheme = themes[nextIndex];
     
+    const themeNames = {
+      terminal: 'Terminal',
+      windows95: 'Windows 95',
+      windowsXP: 'Windows XP',
+      macOS9: 'Mac OS 9',
+    };
+    
     try {
       await AsyncStorage.setItem('app_theme', newTheme);
       setTheme(newTheme);
-      Alert.alert('Theme Changed', `Now using ${newTheme === 'terminal' ? 'Terminal' : newTheme === 'windows95' ? 'Windows 95' : newTheme === 'windowsXP' ? 'Windows XP' : 'Mac OS 9'} theme`);
+      
+      // Show toast notification
+      Toast.show({
+        type: 'success',
+        text1: themeNames[newTheme],
+        text2: 'Theme changed',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
     } catch (error) {
       console.error('Error saving theme:', error);
     }
