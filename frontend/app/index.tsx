@@ -19,6 +19,7 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName, getTheme } from './themes';
+import Toast from 'react-native-toast-message';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
