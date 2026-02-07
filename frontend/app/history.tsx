@@ -107,10 +107,26 @@ export default function History() {
     }
   };
 
-  const saveTheme = async (newTheme: 'terminal' | 'windows95') => {
+  const saveTheme = async (newTheme: 'terminal' | 'windows95' | 'windowsXP' | 'macOS9') => {
+    const themeNames = {
+      terminal: 'Terminal',
+      windows95: 'Windows 95',
+      windowsXP: 'Windows XP',
+      macOS9: 'Mac OS 9',
+    };
+    
     try {
       await AsyncStorage.setItem('app_theme', newTheme);
       setTheme(newTheme);
+      
+      // Show toast notification
+      Toast.show({
+        type: 'success',
+        text1: themeNames[newTheme],
+        text2: 'Theme changed',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
     } catch (error) {
       console.error('Error saving theme:', error);
     }
