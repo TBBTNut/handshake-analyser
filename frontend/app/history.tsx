@@ -1195,6 +1195,7 @@ export default function History() {
           </View>
         </Modal>
       </View>
+      <Toast />
     </SafeAreaView>
   );
 }
